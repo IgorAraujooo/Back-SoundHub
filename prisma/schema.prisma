@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model tbl_categorias_musicais {
+  id_categoria         Int                    @id @default(autoincrement())
+  nome_categoria       String                 @unique(map: "nome_categoria") @db.VarChar(50)
+  tbl_musica_categoria tbl_musica_categoria[]
+}
+
+model tbl_generos_musicais {
+  id_genero         Int                 @id @default(autoincrement())
+  nome_genero       String              @unique(map: "nome_genero") @db.VarChar(50)
+  tbl_musica_genero tbl_musica_genero[]
+}
+
+model tbl_musica_categoria {
+  id_musica               Int
+  id_categoria            Int
+  tbl_musicas             tbl_musicas             @relation(fields: [id_musica], references: [id_musica], onDelete: NoAction, onUpdate: NoAction, map: "tbl_musica_categoria_ibfk_1")
+  tbl_categorias_musicais tbl_categorias_musicais @relation(fields: [id_categoria], references: [id_categoria], onDelete: NoAction, onUpdate: NoAction, map: "tbl_musica_categoria_ibfk_2")
+
+  @@id([id_musica, id_categoria])
+  @@index([id_categoria], map: "id_categoria")
+}
+
+model tbl_musica_genero {
+  id_musica            Int
+  id_genero            Int
+  tbl_musicas          tbl_musicas          @relation(fields: [id_musica], references: [id_musica], onDelete: NoAction, onUpdate: NoAction, map: "tbl_musica_genero_ibfk_1")
+  tbl_generos_musicais tbl_generos_musicais @relation(fields: [id_genero], references: [id_genero], onDelete: NoAction, onUpdate: NoAction, map: "tbl_musica_genero_ibfk_2")
+
+  @@id([id_musica, id_genero])
+  @@index([id_genero], map: "id_genero")
+}
+
+model tbl_musicas {
+  id_musica                   Int                           @id @default(autoincrement())
+  criador_musica              Int?
+  titulo                      String                        @db.VarChar(255)
+  artista                     String                        @db.VarChar(255)
+  album                       String?                       @db.VarChar(255)
+  arquivo_musica              String                        @db.VarChar(255)
+  data_upload                 DateTime                      @db.DateTime(0)
+  tbl_musica_categoria        tbl_musica_categoria[]
+  tbl_musica_genero           tbl_musica_genero[]
+  tbl_usuario                 tbl_usuario?                  @relation(fields: [criador_musica], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_musicas_ibfk_1")
+  tbl_reproducao_musica       tbl_reproducao_musica[]
+  tbl_usuario_musica_favorita tbl_usuario_musica_favorita[]
+
+  @@index([criador_musica], map: "criador_musica")
+}
+
+model tbl_playlist_personalizada {
+  id_playlist   Int          @id @default(autoincrement())
+  id_usuario    Int?
+  nome_playlist String       @db.VarChar(255)
+  data_criacao  DateTime     @db.DateTime(0)
+  tbl_usuario   tbl_usuario? @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_playlist_personalizada_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model tbl_reproducao_musica {
+  id_reproducao   Int          @id @default(autoincrement())
+  id_usuario      Int?
+  id_musica       Int?
+  hora_reproducao DateTime     @db.DateTime(0)
+  tbl_usuario     tbl_usuario? @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_reproducao_musica_ibfk_1")
+  tbl_musicas     tbl_musicas? @relation(fields: [id_musica], references: [id_musica], onDelete: NoAction, onUpdate: NoAction, map: "tbl_reproducao_musica_ibfk_2")
+
+  @@index([id_musica], map: "id_musica")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model tbl_seguidor_seguido {
+  id_seguidor                                               Int
+  id_seguido                                                Int
+  tbl_usuario_tbl_seguidor_seguido_id_seguidorTotbl_usuario tbl_usuario @relation("tbl_seguidor_seguido_id_seguidorTotbl_usuario", fields: [id_seguidor], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_seguidor_seguido_ibfk_1")
+  tbl_usuario_tbl_seguidor_seguido_id_seguidoTotbl_usuario  tbl_usuario @relation("tbl_seguidor_seguido_id_seguidoTotbl_usuario", fields: [id_seguido], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_seguidor_seguido_ibfk_2")
+
+  @@id([id_seguidor, id_seguido])
+  @@index([id_seguido], map: "id_seguido")
+}
+
+model tbl_usuario {
+  id                                                                 Int                           @id @default(autoincrement())
+  nome                                                               String                        @db.VarChar(50)
+  email                                                              String                        @db.VarChar(100)
+  senha                                                              String                        @db.VarChar(255)
+  data_criacao                                                       DateTime                      @db.DateTime(0)
+  tbl_musicas                                                        tbl_musicas[]
+  tbl_playlist_personalizada                                         tbl_playlist_personalizada[]
+  tbl_reproducao_musica                                              tbl_reproducao_musica[]
+  tbl_seguidor_seguido_tbl_seguidor_seguido_id_seguidorTotbl_usuario tbl_seguidor_seguido[]        @relation("tbl_seguidor_seguido_id_seguidorTotbl_usuario")
+  tbl_seguidor_seguido_tbl_seguidor_seguido_id_seguidoTotbl_usuario  tbl_seguidor_seguido[]        @relation("tbl_seguidor_seguido_id_seguidoTotbl_usuario")
+  tbl_usuario_musica_favorita                                        tbl_usuario_musica_favorita[]
+}
+
+model tbl_usuario_musica_favorita {
+  id_usuario  Int
+  id_musica   Int
+  tbl_usuario tbl_usuario @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tbl_usuario_musica_favorita_ibfk_1")
+  tbl_musicas tbl_musicas @relation(fields: [id_musica], references: [id_musica], onDelete: NoAction, onUpdate: NoAction, map: "tbl_usuario_musica_favorita_ibfk_2")
+
+  @@id([id_usuario, id_musica])
+  @@index([id_musica], map: "id_musica")
+}
